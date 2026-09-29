@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Conquest Gods</title>
+<style>
+:root{--bg:#08111d;--panel:#111f31;--line:#37516c;--text:#eef7ff;--muted:#91a8bb;--blue:#36a9ff;--red:#ff5364;--gold:#ffd35a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:radial-gradient(circle at 50% 10%,#17304b,#07101a 62%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
+#app{height:100%;display:grid;grid-template-rows:auto 1fr auto}
+.top{display:flex;align-items:center;gap:8px;padding:7px 9px;background:#091421eF;border-bottom:1px solid #29415a;z-index:5}
+.brand{font-weight:900;letter-spacing:.8px;font-size:14px;white-space:nowrap}.brand b{color:var(--gold)}
+.pill{background:#14263a;border:1px solid #294762;border-radius:999px;padding:5px 8px;font-size:11px;white-space:nowrap}
+.spacer{flex:1}
+button{border:1px solid #476682;background:linear-gradient(#213a53,#13283b);color:white;border-radius:10px;padding:8px 10px;font-weight:800}
+button:active{transform:translateY(1px)}
+#boardWrap{position:relative;overflow:hidden;touch-action:none}
+#board{position:absolute;left:50%;top:50%;width:920px;height:560px;transform-origin:center;background:
+radial-gradient(ellipse at 25% 50%,#16304a55 0 24%,transparent 25%),
+radial-gradient(ellipse at 70% 45%,#16304a55 0 28%,transparent 29%),
+linear-gradient(180deg,#071a2c,#08111d);
+border:1px solid #243f58;border-radius:24px;box-shadow:inset 0 0 70px #0008}
+svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.route{stroke:#50718a;stroke-width:2;stroke-dasharray:5 6;opacity:.48}
+.regionLabel{position:absolute;color:#7890a5;font-size:12px;font-weight:900;letter-spacing:2px;opacity:.5;pointer-events:none}
+.t{position:absolute;width:105px;height:67px;border-radius:45% 55% 47% 53%;border:3px solid #9bc4df;background:#203448;box-shadow:0 7px 14px #0008,inset 0 0 15px #ffffff10;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;transition:.16s transform,.16s filter;overflow:visible}
+.t:before{content:"";position:absolute;inset:5px 7px 9px;border-radius:inherit;background:linear-gradient(135deg,#ffffff18,transparent 45%,#0004);pointer-events:none}
+.t:after{content:"⚑";position:absolute;right:7px;top:-12px;font-size:22px;filter:drop-shadow(0 3px 2px #000);transform-origin:bottom left;animation:flag 1.8s ease-in-out infinite alternate}
+@keyframes flag{to{transform:skewY(-7deg) rotate(3deg)}}
+
+.t.blue{background:linear-gradient(145deg,#1676b9,#123d67);border-color:#5cc4ff}
+.t.red{background:linear-gradient(145deg,#b52d42,#651d2c);border-color:#ff7b87}
+.t.sel{transform:scale(1.13);filter:brightness(1.35);z-index:3;box-shadow:0 0 0 5px #ffd35a44,0 9px 18px #000b}
+.t.target{animation:pulse 1s infinite}
+@keyframes pulse{50%{filter:brightness(1.5);box-shadow:0 0 20px #ffd35a}}
+.name{font-size:11px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 2px #000}
+.army{font-size:22px;line-height:23px;font-weight:1000}
+.bottom{background:#0b1725f2;border-top:1px solid #29415a;padding:7px 9px calc(7px + env(safe-area-inset-bottom))}
+#status{font-size:12px;min-height:18px;color:#dceeff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{display:flex;gap:7px;margin-top:5px}
+.controls button{flex:1}.primary{border-color:#b99225;background:linear-gradient(#8b6814,#4f3a0b)}
+#battle{position:absolute;left:50%;top:15px;transform:translateX(-50%) translateY(-150%);z-index:10;background:#08121eef;border:1px solid #54738e;border-radius:16px;padding:10px 18px;text-align:center;transition:.25s;box-shadow:0 12px 40px #000c;min-width:240px}
+#battle.show{transform:translateX(-50%) translateY(0)}
+.dice{font-size:24px;letter-spacing:5px}.small{font-size:11px;color:var(--muted)}
+@media(max-width:600px){.brand{font-size:12px}.pill.hideSmall{display:none}.top button{padding:6px 8px}}
+</style>
+
+<style>
+#board:before{content:"";position:absolute;inset:0;border-radius:24px;pointer-events:none;background:
+radial-gradient(circle at 16% 28%,#ffffff0d 0 2px,transparent 3px),
+radial-gradient(circle at 77% 62%,#ffffff0b 0 2px,transparent 3px),
+linear-gradient(115deg,transparent 0 48%,#55bfff08 49% 50%,transparent 51%);
+background-size:53px 47px,67px 61px,100% 100%}
+.t{position:absolute;width:105px;height:67px;border-radius:45% 55% 47% 53%;border:3px solid #9bc4df;background:#203448;box-shadow:0 7px 14px #0008,inset 0 0 15px #ffffff10;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;transition:.16s transform,.16s filter;overflow:visible}
+.t.blue{background:linear-gradient(145deg,#218ed1,#14527f 60%,#0b2946);border-color:#6fd0ff}
+.t.red{background:linear-gradient(145deg,#cf4053,#7a2435 60%,#41131e);border-color:#ff8792}
+.t:before{content:"";position:absolute;inset:5px 7px 9px;border-radius:inherit;background:linear-gradient(135deg,#ffffff1c,transparent 45%,#0005);pointer-events:none}
+.t:after{content:"⚑";position:absolute;right:7px;top:-14px;font-size:23px;filter:drop-shadow(0 3px 2px #000);transform-origin:bottom left;animation:flag 1.8s ease-in-out infinite alternate}
+.t.blue:after{color:#5cc4ff}.t.red:after{color:#ff6878}
+@keyframes flag{to{transform:skewY(-7deg) rotate(3deg)}}
+.armyIcon{position:absolute;left:7px;bottom:4px;font-size:15px;filter:drop-shadow(0 2px 1px #000)}
+.regionBonus{position:absolute;border:1px solid #46647c;background:#0b1825c9;border-radius:8px;padding:3px 7px;font-size:9px;font-weight:900;color:#9fb8ca;pointer-events:none}
+#fx{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:24px}
+.shot{position:absolute;width:10px;height:10px;border-radius:50%;background:#ffd35a;box-shadow:0 0 15px #ff9f1a,0 0 28px #ff4d2e;z-index:8}
+.boom{position:absolute;width:15px;height:15px;border-radius:50%;border:4px solid #ffd35a;z-index:9;animation:boom .48s ease-out forwards}
+@keyframes boom{to{transform:scale(5);opacity:0;border-width:1px}}
+.captureFlash{animation:capture .6s ease-out}
+@keyframes capture{30%{filter:brightness(2.3);transform:scale(1.2)}}
+</style>
+
+<style>
+/* PHASE 3 — connected strategic world */
+.landmass{position:absolute;pointer-events:none;filter:drop-shadow(0 13px 10px #0008);opacity:.78}
+.landmass.a{left:38px;top:50px;width:315px;height:330px;background:#16344b;clip-path:polygon(5% 15%,35% 0,72% 8%,100% 35%,86% 64%,65% 72%,54% 100%,25% 86%,8% 60%)}
+.landmass.b{left:325px;top:55px;width:340px;height:440px;background:#18384d;clip-path:polygon(12% 5%,66% 0,92% 17%,83% 42%,100% 64%,70% 77%,61% 100%,30% 91%,9% 69%,20% 44%,0 25%)}
+.landmass.c{left:620px;top:60px;width:265px;height:440px;background:#15364b;clip-path:polygon(4% 12%,42% 0,91% 12%,100% 42%,80% 59%,96% 86%,62% 100%,31% 82%,7% 66%,20% 41%)}
+.coastline{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(115deg,transparent 0 42px,#76cfff08 43px 44px,transparent 45px 82px)}
+.waterName{position:absolute;color:#4d7997;font-size:10px;font-weight:900;letter-spacing:4px;opacity:.42;pointer-events:none;transform:rotate(-12deg)}
+.legend{position:absolute;right:12px;bottom:10px;padding:6px 8px;border-radius:9px;border:1px solid #35536c;background:#07131dd9;font-size:9px;color:#91a8bb;pointer-events:none}
+.t{clip-path:polygon(11% 18%,29% 4%,53% 9%,72% 1%,94% 22%,89% 49%,100% 68%,77% 94%,48% 87%,25% 100%,4% 74%,10% 48%,0 31%);border-radius:24%;width:112px;height:74px}
+.t.sel{clip-path:polygon(11% 18%,29% 4%,53% 9%,72% 1%,94% 22%,89% 49%,100% 68%,77% 94%,48% 87%,25% 100%,4% 74%,10% 48%,0 31%)}
+.route{stroke-width:3;stroke:#7da3ba;opacity:.35}
+.route.sea{stroke:#5cc4ff;stroke-dasharray:3 8;opacity:.65}
+#miniMap{position:absolute;left:10px;bottom:10px;width:112px;height:69px;background:#07131ddd;border:1px solid #3a5870;border-radius:9px;pointer-events:none;overflow:hidden}
+#miniMap span{position:absolute;border-radius:50%;width:6px;height:6px}
+</style>
+
+<style>
+/* PHASE 4 — animated forces */
+.unitSquad{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);display:flex;gap:1px;z-index:5;pointer-events:none}
+.soldier{width:7px;height:12px;border-radius:5px 5px 2px 2px;background:#dceeff;border:1px solid #06111c;box-shadow:0 2px 2px #0008;position:relative;animation:march .65s ease-in-out infinite alternate}
+.soldier:before{content:"";position:absolute;width:5px;height:5px;border-radius:50%;left:0;top:-5px;background:inherit;border:1px solid #06111c}
+.blue .soldier{background:#8ed9ff}.red .soldier{background:#ff9aa3}
+.soldier:nth-child(2){animation-delay:.2s}.soldier:nth-child(3){animation-delay:.4s}
+@keyframes march{to{transform:translateY(-3px) rotate(2deg)}}
+.fort{position:absolute;left:7px;top:3px;font-size:13px;filter:drop-shadow(0 2px 2px #000);opacity:.85}
+.moveUnit{position:absolute;z-index:20;font-size:25px;filter:drop-shadow(0 4px 3px #000);pointer-events:none}
+.tracer{position:absolute;height:2px;background:linear-gradient(90deg,#fff0,#fff7,#ffd35a);transform-origin:left center;z-index:12;pointer-events:none;animation:tracer .25s linear forwards}
+@keyframes tracer{to{opacity:0}}
+.casualty{position:absolute;z-index:20;font-size:18px;pointer-events:none;animation:fall .6s ease-out forwards}
+@keyframes fall{to{transform:translateY(25px) rotate(90deg);opacity:0}}
+</style>
+
+<style>
+/* PHASE 5 — richer combat controls */
+#combatPanel{position:absolute;z-index:30;left:50%;bottom:12px;transform:translate(-50%,130%);width:min(440px,calc(100% - 22px));padding:10px;background:#07131df2;border:1px solid #57738b;border-radius:15px;box-shadow:0 12px 35px #000c;transition:.2s}
+#combatPanel.show{transform:translate(-50%,0)}
+.cpTitle{font-size:12px;font-weight:1000;text-align:center;margin-bottom:7px}.cpRow{display:flex;gap:6px}.cpRow button{flex:1;font-size:11px;padding:8px 4px}
+#combatInfo{font-size:10px;color:#9fb5c7;text-align:center;margin-top:6px}
+.diebox{display:inline-flex;width:31px;height:31px;margin:3px;align-items:center;justify-content:center;border-radius:7px;background:#eef7ff;color:#07111c;font-weight:1000;box-shadow:inset 0 -4px 0 #a9bac7,0 3px 7px #0008}
+</style>
+
+<style>
+/* PHASE 7 — clickable cartoon armies */
+.t{overflow:visible}
+.unitSquad{pointer-events:auto!important;cursor:pointer;padding:7px 8px 3px;border-radius:12px}
+.unitSquad:hover{background:#ffffff10}
+.unitSquad:active{transform:translateX(-50%) scale(.9)}
+.cartoonUnit{position:absolute;z-index:24;width:35px;height:35px;border-radius:50%;border:3px solid #07111c;display:flex;align-items:center;justify-content:center;font-size:21px;filter:drop-shadow(0 5px 3px #0008);pointer-events:none}
+.cartoonUnit.blue{background:#61c7ff}.cartoonUnit.red{background:#ff6c79}
+.cartoonUnit:before{content:"";position:absolute;left:5px;top:8px;width:5px;height:7px;border-radius:50%;background:#07111c;box-shadow:16px 0 #07111c}
+.cartoonUnit:after{content:"⌣";position:absolute;top:13px;font-size:17px;color:#07111c;font-weight:1000}
+.dust{position:absolute;width:9px;height:9px;border-radius:50%;background:#c7d5dd66;z-index:19;pointer-events:none;animation:dust .6s forwards}
+@keyframes dust{to{transform:translate(-14px,-16px) scale(2.2);opacity:0}}
+.speech{position:absolute;z-index:26;background:white;color:#09131d;padding:4px 7px;border-radius:10px;font-size:9px;font-weight:1000;pointer-events:none;animation:pop .9s forwards;white-space:nowrap}
+@keyframes pop{0%{transform:scale(.3);opacity:0}20%{transform:scale(1.15);opacity:1}75%{opacity:1}100%{transform:translateY(-15px);opacity:0}}
+#unitCard{position:absolute;z-index:35;display:none;width:220px;background:#07131df5;border:2px solid #66849b;border-radius:16px;padding:10px;box-shadow:0 12px 30px #000c}
+#unitCard.show{display:block}
+#unitCard h3{font-size:13px;margin:0 0 5px}.ucFace{font-size:35px;float:left;margin-right:8px}.ucText{font-size:10px;color:#abc0cf;min-height:40px}
+#unitCard button{width:100%;margin-top:7px;font-size:10px}
+</style>
+
+<style>
+/* PHASE 8 — cartoon combined forces */
+.vehicle{position:absolute;z-index:25;pointer-events:none;filter:drop-shadow(0 5px 3px #0009);font-size:28px}
+.vehicle .eye{position:absolute;font-size:8px;left:10px;top:6px}
+.vehicle.tank{animation:tankBob .22s infinite alternate}
+.vehicle.plane{font-size:31px;animation:planeTilt .45s infinite alternate}
+.vehicle.ship{font-size:31px;animation:shipBob .55s infinite alternate}
+@keyframes tankBob{to{transform:translateY(-2px) rotate(2deg)}}@keyframes planeTilt{to{transform:rotate(8deg)}}@keyframes shipBob{to{transform:translateY(3px) rotate(-3deg)}}
+.shell{position:absolute;width:7px;height:7px;border-radius:50%;background:#fff3a0;box-shadow:0 0 12px #ff8a00;z-index:28;pointer-events:none}
+.starburst{position:absolute;z-index:29;font-size:25px;pointer-events:none;animation:star .55s forwards}
+@keyframes star{to{transform:scale(2.8) rotate(100deg);opacity:0}}
+.celebrate{position:absolute;z-index:30;font-size:20px;pointer-events:none;animation:celebrate 1.1s forwards}
+@keyframes celebrate{0%{transform:translateY(10px);opacity:0}20%{opacity:1}100%{transform:translateY(-55px) rotate(25deg);opacity:0}}
+#ucVehicles{display:flex;gap:5px;clear:both;padding-top:6px}
+#ucVehicles button{margin:0;padding:6px 3px}
+</style>
+
+<style>
+/* PHASE 9 — living battlefield */
+.baseIcon{position:absolute;right:3px;bottom:3px;font-size:14px;filter:drop-shadow(0 2px 2px #000);pointer-events:none}
+.damageMark{position:absolute;right:12px;top:10px;font-size:13px;animation:smoke 1s infinite alternate;pointer-events:none}
+@keyframes smoke{to{transform:translateY(-5px);opacity:.4}}
+.patrol{position:absolute;z-index:18;font-size:22px;pointer-events:none;opacity:.78;filter:drop-shadow(0 4px 3px #000)}
+.defShot{position:absolute;width:5px;height:5px;border-radius:50%;background:#ffef91;box-shadow:0 0 9px #ff7a00;z-index:27;pointer-events:none}
+#warTicker{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:12;font-size:9px;font-weight:900;letter-spacing:1px;background:#06111bcc;border:1px solid #34536c;border-radius:999px;padding:4px 9px;color:#a9c2d3;pointer-events:none}
+</style>
+
+<style>
+/* PHASE 10 — final mobile polish */
+button{cursor:pointer;transition:transform .12s,filter .12s}
+button:active{transform:scale(.96);filter:brightness(1.25)}
+.t{transition:.18s transform,.18s filter,.18s box-shadow}
+.t:hover{filter:brightness(1.12)}
+.name,.army{pointer-events:none}
+#toast{position:absolute;z-index:50;left:50%;top:52px;transform:translate(-50%,-30px);opacity:0;background:#07131df2;border:1px solid #5e7d95;border-radius:12px;padding:7px 12px;font-size:11px;font-weight:900;pointer-events:none;transition:.25s;white-space:nowrap}
+#toast.on{transform:translate(-50%,0);opacity:1}
+#phaseBadge{font-size:9px;color:#ffd35a;border:1px solid #725d22;border-radius:999px;padding:3px 6px}
+.hudGlow{animation:hudGlow .7s ease-out}
+@keyframes hudGlow{50%{box-shadow:inset 0 0 28px #ffd35a44}}
+.t.capturePop{animation:capPop .7s ease-out}
+@keyframes capPop{30%{transform:scale(1.22) rotate(-3deg);filter:brightness(2)}60%{transform:scale(.94) rotate(2deg)}}
+.confetti{position:absolute;z-index:40;font-size:14px;pointer-events:none;animation:confetti 1.2s ease-out forwards}
+@keyframes confetti{to{transform:translate(var(--dx),var(--dy)) rotate(540deg);opacity:0}}
+@media(max-width:600px){
+ .controls{gap:4px}.controls button{font-size:10px;padding:9px 3px}
+ #regionStatus{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #combatPanel{bottom:8px}.cpRow button{font-size:9px}
+}
+</style>
+
+<style>
+/* GRAPHICS PASS 20 — illustrated world rebuild */
+#board{background:
+radial-gradient(ellipse at 18% 16%,#2d658044 0 5%,transparent 6%),
+radial-gradient(ellipse at 78% 72%,#17495e55 0 7%,transparent 8%),
+linear-gradient(#08283c,#061722 72%);overflow:hidden}
+#worldArt{position:absolute;inset:0;pointer-events:none;z-index:0}
+.continent{position:absolute;filter:drop-shadow(0 9px 8px #0009);border:3px solid #5b806c;background:
+radial-gradient(circle at 20% 30%,#53724c 0 2%,transparent 3%),
+radial-gradient(circle at 67% 55%,#6d7144 0 3%,transparent 4%),
+linear-gradient(135deg,#315b46,#314c3b 50%,#3b533c)}
+.continent:after{content:"";position:absolute;inset:5px;background:repeating-linear-gradient(125deg,transparent 0 17px,#ffffff08 18px 19px,transparent 20px 35px);clip-path:inherit}
+.c1{left:42px;top:50px;width:315px;height:345px;clip-path:polygon(8% 13%,30% 2%,58% 8%,82% 2%,100% 28%,91% 53%,76% 64%,66% 91%,44% 100%,24% 83%,5% 66%,12% 41%,0 27%)}
+.c2{left:330px;top:48px;width:340px;height:445px;clip-path:polygon(11% 7%,40% 1%,70% 8%,93% 21%,85% 43%,100% 60%,86% 78%,62% 74%,53% 100%,31% 91%,14% 73%,18% 49%,1% 32%)}
+.c3{left:620px;top:55px;width:265px;height:440px;clip-path:polygon(7% 12%,36% 2%,66% 7%,94% 18%,99% 43%,82% 57%,97% 81%,71% 97%,46% 88%,27% 100%,9% 77%,17% 55%,1% 37%)}
+.mountain{position:absolute;font-size:21px;opacity:.62;filter:grayscale(.2) drop-shadow(0 3px 2px #0008)}
+.forest{position:absolute;font-size:16px;letter-spacing:-6px;opacity:.55}
+.island{position:absolute;width:28px;height:16px;border-radius:65% 35% 60% 40%;background:#395d46;border:2px solid #5b806c;box-shadow:0 4px 5px #0008}
+.wave{position:absolute;color:#63b8d7;font-size:13px;opacity:.28;animation:waveDrift 3s ease-in-out infinite alternate}
+@keyframes waveDrift{to{transform:translateX(12px)}}
+#board .landmass{display:none}
+#board .coastline{opacity:.35;z-index:1}
+#routes{z-index:2}.t{z-index:4}.regionLabel,.regionBonus{z-index:3}
+</style>
+<style>
+/* FINAL — terrain identity */
+.t .terrain{position:absolute;left:8px;top:5px;font-size:15px;opacity:.72;filter:drop-shadow(0 2px 1px #000);pointer-events:none}
+.t.snow{box-shadow:0 7px 14px #0008,inset 0 16px 18px #dff7ff30}.t.forestland{box-shadow:0 7px 14px #0008,inset 0 -18px 22px #163e254f}
+.t.mountainland{box-shadow:0 7px 14px #0008,inset 16px 0 20px #77838a30}.t.plains{box-shadow:0 7px 14px #0008,inset 0 -18px 20px #c8a84728}
+.t.desert{box-shadow:0 7px 14px #0008,inset 0 -24px 24px #e6a93638}.t.volcanic{box-shadow:0 7px 14px #0008,inset 0 0 24px #ff4b2028}
+.t.coastal{box-shadow:0 7px 14px #0008,inset -15px -12px 20px #51cfff30}
+.terrainKey{position:absolute;left:132px;bottom:10px;z-index:3;font-size:8px;color:#91a8bb;background:#07131dcc;border:1px solid #35536c;border-radius:8px;padding:4px 6px;pointer-events:none}
+</style><style>
+/* FINAL — cartoon army redesign */
+.unitSquad{bottom:-16px;gap:3px}
+.soldier{width:15px;height:18px;border-radius:7px 7px 5px 5px;border:2px solid #07111c;background:#8ed9ff;box-shadow:0 3px 2px #0008;transform-origin:50% 100%}
+.red .soldier{background:#ff9aa3}
+.soldier:before{width:11px;height:10px;left:0px;top:-10px;border:2px solid #07111c;background:inherit;box-shadow:none}
+.soldier:after{content:"";position:absolute;left:3px;top:-6px;width:2px;height:3px;border-radius:50%;background:#07111c;box-shadow:5px 0 #07111c,2px 12px 0 1px #07111c}
+.helmet{position:absolute;left:-2px;top:-12px;width:15px;height:7px;border-radius:9px 9px 2px 2px;background:#243a28;border:1px solid #07111c;z-index:3}
+.rifle{position:absolute;right:-8px;top:4px;width:12px;height:3px;background:#15212a;border:1px solid #07111c;transform:rotate(-18deg);transform-origin:left}
+.legL,.legR{position:absolute;bottom:-6px;width:4px;height:8px;background:inherit;border:1px solid #07111c;border-radius:3px;transform-origin:top}
+.legL{left:2px}.legR{right:2px}
+.soldier:nth-child(odd) .legL{animation:leg .35s infinite alternate}.soldier:nth-child(odd) .legR{animation:leg .35s infinite alternate-reverse}
+.soldier:nth-child(even) .legL{animation:leg .35s infinite alternate-reverse}.soldier:nth-child(even) .legR{animation:leg .35s infinite alternate}
+@keyframes leg{to{transform:rotate(24deg)}}
+.soldier{animation:troopBounce .42s ease-in-out infinite alternate!important}
+@keyframes troopBounce{to{transform:translateY(-3px) rotate(-2deg)}}
+</style><style>
+/* FINAL — army formations */
+.unitSquad.scout{width:34px;justify-content:center}
+.unitSquad.fireteam{width:58px;justify-content:center}
+.unitSquad.column{width:54px;display:grid;grid-template-columns:repeat(2,18px);gap:2px 5px;bottom:-28px}
+.unitSquad.battalion{width:76px;display:grid;grid-template-columns:repeat(3,18px);gap:2px 4px;bottom:-29px}
+.unitSquad.column .soldier:nth-child(even),.unitSquad.battalion .soldier:nth-child(even){transform:translateY(5px)}
+.formationTag{position:absolute;left:50%;bottom:-43px;transform:translateX(-50%);font-size:7px;font-weight:1000;letter-spacing:.6px;color:#c8d9e5;background:#06111cbb;border:1px solid #35536c;border-radius:6px;padding:2px 4px;white-space:nowrap;pointer-events:none}
+.t{margin-bottom:8px}
+</style><style>
+/* FINAL — formation marching */
+.marchTrooper{position:absolute;z-index:31;width:17px;height:21px;border-radius:8px 8px 5px 5px;border:2px solid #07111c;pointer-events:none;filter:drop-shadow(0 4px 2px #0008)}
+.marchTrooper.blue{background:#8ed9ff}.marchTrooper.red{background:#ff9aa3}
+.marchTrooper:before{content:"🪖";position:absolute;font-size:16px;left:-2px;top:-14px}
+.marchTrooper:after{content:"••";position:absolute;font-size:7px;letter-spacing:3px;color:#07111c;left:3px;top:2px}
+.footDust{position:absolute;z-index:29;width:12px;height:7px;border-radius:50%;background:#d8c39b66;pointer-events:none;animation:footDust .55s forwards}
+@keyframes footDust{to{transform:scale(2.3) translateY(-4px);opacity:0}}
+.routeGlow{stroke:#ffd35a!important;stroke-width:7!important;opacity:.75!important;filter:drop-shadow(0 0 5px #ffd35a);animation:rg .45s infinite alternate}
+@keyframes rg{to{opacity:.28}}
+.arrivalRing{position:absolute;z-index:30;width:25px;height:12px;border:3px solid #fff3a0;border-radius:50%;pointer-events:none;animation:arrive .6s forwards}
+@keyframes arrive{to{transform:scale(3.5);opacity:0}}
+</style><style>
+/* FINAL — cartoon tanks */
+.cartoonTank{position:absolute;z-index:34;width:50px;height:29px;border-radius:12px 14px 8px 8px;background:#65794b;border:3px solid #10170e;box-shadow:0 5px 4px #0008;pointer-events:none}
+.cartoonTank .track{position:absolute;left:-4px;bottom:-8px;width:54px;height:13px;border-radius:9px;background:#1a2118;border:2px solid #080c07;overflow:hidden}
+.cartoonTank .track:after{content:"● ● ● ●";position:absolute;color:#76806c;font-size:10px;letter-spacing:2px;left:2px;top:-2px;animation:tracks .3s linear infinite}
+@keyframes tracks{to{transform:translateX(7px)}}
+.cartoonTank .turret{position:absolute;left:13px;top:-13px;width:26px;height:17px;border-radius:10px 10px 5px 5px;background:#7f925e;border:2px solid #10170e;transform-origin:50% 70%}
+.cartoonTank .barrel{position:absolute;left:21px;top:5px;width:31px;height:6px;border-radius:3px;background:#35432d;border:2px solid #10170e;transform-origin:left center}
+.cartoonTank .eye{position:absolute;left:6px;top:4px;width:4px;height:5px;border-radius:50%;background:#10170e;box-shadow:9px 0 #10170e}
+.cartoonTank .mouth{position:absolute;left:10px;top:11px;font-size:10px;color:#10170e;font-weight:1000}
+.tankSmoke{position:absolute;z-index:32;width:13px;height:13px;border-radius:50%;background:#a9b1ad88;pointer-events:none;animation:tSmoke .75s forwards}
+@keyframes tSmoke{to{transform:translate(-8px,-25px) scale(2.2);opacity:0}}
+.tankMuzzle{position:absolute;z-index:38;font-size:24px;pointer-events:none;animation:muzzle .28s forwards}
+@keyframes muzzle{to{transform:scale(2);opacity:0}}
+</style><style>
+/* FINAL — air force */
+.warplane{position:absolute;z-index:42;width:58px;height:34px;pointer-events:none;filter:drop-shadow(0 7px 4px #0009)}
+.warplane .body{position:absolute;left:8px;top:11px;width:43px;height:12px;border-radius:70% 15% 15% 70%;background:#9ba9b0;border:2px solid #101820}
+.warplane .nose{position:absolute;right:-8px;top:1px;border-left:12px solid #c4d0d5;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.warplane .wing{position:absolute;left:17px;top:-8px;width:20px;height:28px;background:#6f818b;border:2px solid #101820;clip-path:polygon(0 0,100% 42%,100% 58%,0 100%,30% 52%)}
+.warplane .cockpit{position:absolute;right:10px;top:-5px;width:11px;height:7px;border-radius:8px 8px 2px 2px;background:#5ed5ff;border:2px solid #101820}
+.warplane .face{position:absolute;right:11px;top:1px;font-size:7px;color:#101820;font-weight:1000}
+.airTrail{position:absolute;z-index:39;height:3px;border-radius:5px;background:linear-gradient(90deg,#d9f5ff00,#d9f5ffaa);pointer-events:none;transform-origin:left center;animation:trailFade .8s forwards}
+@keyframes trailFade{to{opacity:0}}
+.bomb{position:absolute;z-index:43;font-size:17px;pointer-events:none}
+.airShadow{position:absolute;z-index:8;width:45px;height:12px;border-radius:50%;background:#0005;filter:blur(3px);pointer-events:none}
+</style><style>
+/* FINAL — navy */
+.warship{position:absolute;z-index:33;width:72px;height:32px;pointer-events:none;filter:drop-shadow(0 7px 4px #000a)}
+.warship .hull{position:absolute;left:0;bottom:0;width:72px;height:18px;background:#566d78;border:3px solid #101820;clip-path:polygon(0 0,100% 0,83% 100%,17% 100%);border-radius:5px}
+.warship .deck{position:absolute;left:23px;bottom:16px;width:27px;height:15px;background:#788c94;border:2px solid #101820;border-radius:5px 5px 1px 1px}
+.warship .gun{position:absolute;left:47px;bottom:17px;width:26px;height:5px;background:#303f46;border:2px solid #101820;border-radius:4px;transform-origin:left center}
+.warship .eye{position:absolute;left:7px;top:4px;width:4px;height:4px;border-radius:50%;background:#101820;box-shadow:10px 0 #101820}
+.wake{position:absolute;z-index:28;width:60px;height:10px;border-radius:50%;border-bottom:3px solid #c6f4ff99;pointer-events:none;animation:wake .7s forwards}
+@keyframes wake{to{transform:scaleX(1.7);opacity:0}}
+.splash{position:absolute;z-index:37;font-size:25px;pointer-events:none;animation:splash .55s forwards}
+@keyframes splash{to{transform:translateY(-18px) scale(1.7);opacity:0}}
+</style><style>
+/* FINAL — growing bases and forts */
+.baseBuild{position:absolute;right:-12px;top:35px;z-index:6;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 4px 2px #0009);transform-origin:50% 100%}
+.baseBuild:hover{transform:scale(1.12)}
+.baseBuild.camp{font-size:20px}.baseBuild.barricade{font-size:22px}.baseBuild.tower{font-size:24px}.baseBuild.fortress{font-size:28px}
+.baseBuild .lvl{position:absolute;left:50%;top:22px;transform:translateX(-50%);font-size:6px;color:white;background:#07111ddd;border:1px solid #60798d;border-radius:5px;padding:1px 3px;white-space:nowrap}
+.baseBuild.fortress:after{content:"";position:absolute;inset:-7px;border:2px dashed #ffd35a77;border-radius:50%;animation:fortSpin 7s linear infinite}
+@keyframes fortSpin{to{transform:rotate(360deg)}}
+.buildPop{animation:buildPop .45s ease-out}
+@keyframes buildPop{0%{transform:scale(.3)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+</style><style>
+/* FINAL — battle clash */
+.clashUnit{position:absolute;z-index:44;width:18px;height:23px;border:2px solid #08111b;border-radius:8px;pointer-events:none;filter:drop-shadow(0 4px 2px #0009)}
+.clashUnit.blue{background:#78d2ff}.clashUnit.red{background:#ff8390}
+.clashUnit:before{content:"🪖";position:absolute;font-size:16px;left:-1px;top:-14px}
+.clashUnit:after{content:"• •";position:absolute;left:3px;top:2px;font-size:6px;color:#08111b}
+.hitStar{position:absolute;z-index:48;font-size:22px;pointer-events:none;animation:hitStar .45s forwards}
+@keyframes hitStar{to{transform:scale(2.3) rotate(130deg);opacity:0}}
+.retreating{animation:retreatShake .18s infinite alternate}
+@keyframes retreatShake{to{filter:brightness(1.5);transform:rotate(7deg)}}
+.battleCloud{position:absolute;z-index:43;font-size:45px;pointer-events:none;animation:cloudFight .7s ease-in-out infinite alternate}
+@keyframes cloudFight{to{transform:scale(1.15) rotate(8deg)}}
+</style><style>
+/* FINAL — territory capture ceremony */
+.captureFlag{position:absolute;z-index:55;width:5px;height:58px;background:#d9e4e9;border:1px solid #07111c;transform-origin:50% 100%;pointer-events:none}
+.captureFlag .cloth{position:absolute;left:4px;top:3px;width:38px;height:23px;border:2px solid #07111c;clip-path:polygon(0 0,100% 12%,83% 52%,100% 91%,0 100%);transform-origin:left center;animation:flagWave .3s ease-in-out infinite alternate}
+.captureFlag.blue .cloth{background:#36a9ff}.captureFlag.red .cloth{background:#ff5364}
+@keyframes flagWave{to{transform:skewY(-8deg) scaleX(.92)}}
+.flagFall{animation:flagFall .45s ease-in forwards}
+@keyframes flagFall{to{transform:rotate(82deg);opacity:.3}}
+.flagRise{animation:flagRise .55s cubic-bezier(.2,.9,.3,1.2) forwards}
+@keyframes flagRise{from{transform:translateY(55px) scaleY(.2);opacity:0}to{transform:translateY(0) scaleY(1);opacity:1}}
+.retreatIcon{position:absolute;z-index:53;font-size:24px;pointer-events:none;filter:drop-shadow(0 3px 2px #000)}
+.captureBanner{position:absolute;z-index:57;font-size:11px;font-weight:1000;letter-spacing:1px;background:#07111dec;border:2px solid #ffd35a;border-radius:10px;padding:6px 9px;color:#fff;pointer-events:none;animation:capBanner 1.25s forwards}
+@keyframes capBanner{0%{transform:translateY(10px) scale(.5);opacity:0}18%{transform:scale(1.1);opacity:1}75%{opacity:1}100%{transform:translateY(-25px);opacity:0}}
+</style><style>
+/* FINAL — cartoon personality */
+.mood{position:absolute;left:50%;top:-28px;transform:translateX(-50%);z-index:9;font-size:14px;filter:drop-shadow(0 2px 1px #000);pointer-events:none;animation:moodBob .7s ease-in-out infinite alternate}
+@keyframes moodBob{to{transform:translate(-50%,-3px) rotate(5deg)}}
+.unitSquad.angry .soldier:after{content:"⌄ ⌄";font-size:6px;letter-spacing:1px;top:-6px;left:2px;box-shadow:none;background:none;width:auto;height:auto}
+.unitSquad.worried .soldier:after{content:"•﹏•";font-size:6px;top:-6px;left:1px;box-shadow:none;background:none;width:auto;height:auto}
+.unitSquad.cheer{animation:cheerSquad .35s ease-in-out 4 alternate}
+@keyframes cheerSquad{to{transform:translateX(-50%) translateY(-8px) rotate(4deg)}}
+.reactionBubble{position:absolute;z-index:60;background:#fff;color:#09131d;border:2px solid #09131d;border-radius:13px;padding:4px 7px;font-size:10px;font-weight:1000;pointer-events:none;animation:reaction 1.15s forwards}
+@keyframes reaction{0%{transform:scale(.2);opacity:0}18%{transform:scale(1.15);opacity:1}75%{opacity:1}100%{transform:translateY(-22px);opacity:0}}
+</style><style>
+/* FINAL — living terrain */
+.cloudlet{position:absolute;z-index:2;font-size:31px;opacity:.22;pointer-events:none;filter:blur(.3px);animation:cloudDrift 24s linear infinite}
+.cloudlet.c2{animation-duration:31s;animation-delay:-13s}.cloudlet.c3{animation-duration:27s;animation-delay:-7s}
+@keyframes cloudDrift{from{transform:translateX(-180px)}to{transform:translateX(1050px)}}
+.oceanBand{position:absolute;z-index:1;width:190px;height:16px;color:#77d6f3;opacity:.18;font-size:20px;letter-spacing:8px;white-space:nowrap;pointer-events:none;animation:oceanFlow 4s linear infinite}
+@keyframes oceanFlow{to{transform:translateX(35px)}}
+.liveForest{position:absolute;z-index:2;font-size:17px;letter-spacing:-5px;transform-origin:50% 100%;pointer-events:none;animation:forestSway 1.9s ease-in-out infinite alternate}
+@keyframes forestSway{to{transform:skewX(5deg) rotate(2deg)}}
+.birds{position:absolute;z-index:3;color:#c8e7f5;font-size:12px;letter-spacing:7px;opacity:.45;pointer-events:none;animation:birdsFly 18s linear infinite}
+@keyframes birdsFly{from{transform:translate(-120px,0)}to{transform:translate(1050px,-90px)}}
+.volSmoke{position:absolute;z-index:3;font-size:18px;opacity:.45;pointer-events:none;animation:volSmoke 2.6s ease-out infinite}
+@keyframes volSmoke{from{transform:translateY(0) scale(.5);opacity:.45}to{transform:translateY(-35px) scale(1.6);opacity:0}}
+</style><style>
+/* FINAL — strategic roads and sea lanes */
+.route.land{stroke:#8f7959;stroke-width:5;stroke-dasharray:10 4;opacity:.48;filter:drop-shadow(0 2px 1px #000)}
+.route.sea{stroke:#78dbff;stroke-width:3;stroke-dasharray:3 9;opacity:.68;animation:seaLane 1.2s linear infinite}
+@keyframes seaLane{to{stroke-dashoffset:-24}}
+.route.activePath{stroke:#ffe16a!important;stroke-width:9!important;stroke-dasharray:12 5!important;opacity:.95!important;filter:drop-shadow(0 0 7px #ffd35a);animation:pathFlow .45s linear infinite}
+@keyframes pathFlow{to{stroke-dashoffset:-34}}
+.routeArrow{position:absolute;z-index:7;font-size:20px;color:#ffe16a;filter:drop-shadow(0 0 5px #ff9f1a);pointer-events:none;animation:arrowPulse .55s infinite alternate}
+@keyframes arrowPulse{to{transform:scale(1.35);opacity:.55}}
+</style><style>
+/* FINAL — cinematic camera */
+#board{transition:transform .42s cubic-bezier(.2,.8,.2,1),filter .25s}
+#board.cinematic{filter:brightness(1.08) saturate(1.12)}
+#board.cameraShake{animation:cameraShake .28s linear}
+@keyframes cameraShake{0%,100%{margin-left:0;margin-top:0}20%{margin-left:-7px;margin-top:3px}40%{margin-left:6px;margin-top:-4px}60%{margin-left:-4px;margin-top:-2px}80%{margin-left:5px;margin-top:3px}}
+#cinemaBars:before,#cinemaBars:after{content:"";position:absolute;left:0;width:100%;height:0;background:#000;z-index:70;pointer-events:none;transition:.3s}
+#cinemaBars:before{top:0}#cinemaBars:after{bottom:0}
+#cinemaBars.on:before,#cinemaBars.on:after{height:16px}
+</style><style>
+/* FINAL — cartoon battle card */
+#battle{min-width:310px;padding:9px 12px;border:2px solid #617f96;background:linear-gradient(180deg,#10283bf2,#07131df5)}
+#battleTitle{display:block;font-size:11px;letter-spacing:1px;color:#ffd35a;margin-bottom:4px}
+.battleSides{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.bSide{width:92px;border-radius:11px;padding:6px 4px;border:1px solid #48647a;font-size:9px;font-weight:900}
+.bSide.atk{background:#123b5a}.bSide.def{background:#55202b}
+.bFace{font-size:23px;display:block}.vsBurst{font-size:16px;font-weight:1000;color:#ffd35a}
+#dice{font-size:15px;letter-spacing:1px;margin:4px 0}
+#battleText{font-size:9px}
+.diebox{animation:diceRoll .35s ease-out}
+@keyframes diceRoll{0%{transform:rotate(0) scale(.4)}55%{transform:rotate(230deg) scale(1.3)}100%{transform:rotate(360deg) scale(1)}}
+.casualtyLine{font-size:9px;font-weight:900;margin-top:3px;color:#dcecff}
+</style><style>
+/* FINAL — compact mobile command HUD */
+#app{grid-template-rows:40px 1fr auto}
+.top{height:40px;padding:4px 7px;background:#06111bed;backdrop-filter:blur(7px)}
+.brand{font-size:11px}.pill{font-size:9px;padding:3px 6px}.top button{font-size:9px;padding:5px 7px}
+.bottom{padding:5px 7px calc(5px + env(safe-area-inset-bottom));background:#06111bf2;backdrop-filter:blur(8px)}
+#status{font-size:10px;min-height:14px;text-align:center}
+#regionStatus{text-align:center;font-size:7px!important;margin-top:1px!important}
+.controls{margin-top:3px;gap:4px}
+.controls button{height:39px;border-radius:11px;padding:4px 3px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:12px}
+.controls button:before{font-size:16px;line-height:17px}
+#reinforce:before{content:"➕"}#attack:before{content:"⚔️"}#fortify:before{content:"↔️"}#end:before{content:"⏭️"}
+#reinforce,#attack,#fortify,#end{font-size:0}
+#reinforce:after{content:"REINFORCE";font-size:8px}#attack:after{content:"ATTACK";font-size:8px}#fortify:after{content:"MOVE";font-size:8px}#end:after{content:"END TURN";font-size:8px}
+#attack{border-color:#a47b25;background:linear-gradient(#735818,#3d2d09)}
+#boardWrap{min-height:0}
+@media(max-width:600px){
+ .top .hideSmall{display:none}.brand{letter-spacing:.3px}
+ #phaseBadge{font-size:7px;padding:2px 4px}
+ #battle{min-width:285px;max-width:94vw}
+ .terrainKey,.legend{font-size:6px}
+}
+</style><style>
+/* FINAL — coordinated FX polish */
+.fxSpark{position:absolute;z-index:65;width:5px;height:12px;border-radius:50%;background:#ffe477;box-shadow:0 0 7px #ff7b00;pointer-events:none}
+.fxSmoke{position:absolute;z-index:62;width:15px;height:15px;border-radius:50%;background:#87919899;filter:blur(1px);pointer-events:none}
+.fxFlash{position:absolute;z-index:64;width:18px;height:18px;border-radius:50%;background:#fff8b5;box-shadow:0 0 16px #ffb000,0 0 30px #ff4b00;pointer-events:none}
+.fxRipple{position:absolute;z-index:61;width:20px;height:8px;border:3px solid #b9f2ff;border-radius:50%;pointer-events:none}
+.fxDust{position:absolute;z-index:60;width:13px;height:8px;border-radius:50%;background:#cbb78a88;pointer-events:none}
+</style><style>
+/* FINAL — animation synchronization */
+#fx{contain:layout paint}
+.routeGlow,.route.activePath{will-change:stroke-dashoffset,opacity}
+.marchTrooper,.cartoonTank,.warplane,.warship,.clashUnit{will-change:transform,left,top,opacity}
+@media (prefers-reduced-motion:reduce){
+ .cloudlet,.oceanBand,.liveForest,.birds,.volSmoke,.wave{animation-duration:12s!important}
+}
+</style><style>
+/* FINAL — QA / clipping / mobile stability */
+html,body,#app{max-width:100%;overflow:hidden}
+#boardWrap{overflow:hidden;touch-action:manipulation}
+#board{transform-origin:center center}
+#fx{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#unitCard{max-width:min(220px,82vw)}
+#battle{max-width:min(340px,94vw)}
+.t{touch-action:manipulation}
+.formationTag{max-width:78px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:430px){
+ .top{padding-left:4px;padding-right:4px}
+ .brand{font-size:10px}
+ .pill{font-size:8px;padding:2px 4px}
+ #phaseBadge{display:none}
+ .controls button{min-width:0}
+ #status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #regionStatus{display:none}
+}
+</style><style>
+/* CONQUEST GODS — RELEASE */
+#phaseBadge{display:none!important}
+.brand b{letter-spacing:1px}
+#warTicker{opacity:.72}
+.releaseMark{font-size:7px;color:#7891a4;letter-spacing:1px;margin-left:5px}
+@media(max-width:430px){.releaseMark{display:none}}
+</style></head>
+<body>
+<div id="app">
+  <div class="top">
+    <div class="brand">CONQUEST <b>GODS</b><span class="releaseMark">WORLD COMMAND</span> </div>
+    <div class="pill" id="turn">YOUR TURN</div>
+    <div class="pill hideSmall">Reserve: <b id="reserve">5</b></div>
+    <div class="spacer"></div>
+    <button id="newBtn">NEW</button>
+  </div>
+  <div id="boardWrap">
+    <div id="toast">COMMAND READY</div><div id="cinemaBars"></div><div id="battle"><b id="battleTitle">BATTLE</b><div class="battleSides"><div class="bSide atk"><span class="bFace">😠🪖</span><span id="atkName">ATTACKER</span></div><div class="vsBurst">⚔ VS</div><div class="bSide def"><span class="bFace">😤🛡️</span><span id="defName">DEFENDER</span></div></div><div class="dice" id="dice">⚄ ⚂</div><div class="small" id="battleText"></div><div class="casualtyLine" id="casLine"></div></div>
+<div id="combatPanel"><div class="cpTitle" id="cpTitle">BATTLE COMMAND</div>
+<div class="cpRow"><button id="roll1">1 DIE</button><button id="roll2">2 DICE</button><button id="roll3">3 DICE</button><button class="primary" id="blitz">⚡ BLITZ</button></div>
+<div id="combatInfo">Choose attack strength.</div></div>
+    <div id="board">
+<div id="worldArt">
+ <div class="continent c1"></div><div class="continent c2"></div><div class="continent c3"></div>
+ <div class="mountain" style="left:185px;top:150px">▲▲▲</div>
+ <div class="mountain" style="left:455px;top:285px">▲▲▲▲</div>
+ <div class="mountain" style="left:700px;top:190px">▲▲</div>
+ <div class="forest" style="left:75px;top:285px">🌲🌲🌲</div>
+ <div class="forest" style="left:530px;top:170px">🌲🌲🌲🌲</div>
+ <div class="forest" style="left:760px;top:355px">🌲🌲🌲</div>
+ <div class="island" style="left:305px;top:435px"></div><div class="island" style="left:595px;top:505px"></div>
+ <div class="wave" style="left:280px;top:400px">≈ ≈ ≈</div>
+ <div class="wave" style="left:650px;top:330px">≈ ≈ ≈ ≈</div>
+ <div class="wave" style="left:530px;top:520px">≈ ≈ ≈</div>
+</div>
+
+      <div class="landmass a"></div><div class="landmass b"></div><div class="landmass c"></div>
+<div class="coastline"></div>
+<div class="waterName" style="left:295px;top:300px">WESTERN SEA</div>
+<div class="waterName" style="left:690px;top:340px">EMBER OCEAN</div>
+<svg id="routes" viewBox="0 0 920 560"></svg><div id="fx"></div><div id="warTicker">⚡ LIVE BATTLEFIELD</div><div id="unitCard"><div class="ucFace">🪖</div><h3 id="ucName">ARMY</h3><div class="ucText" id="ucText"></div><button id="ucMarch">▶ CARTOON MARCH</button>
+<div id="ucVehicles"><button data-v="tank">🛞 TANK</button><button data-v="plane">✈️ AIR</button><button data-v="ship">🚢 SHIP</button></div></div>
+<div id="miniMap"></div><div class="terrainKey">❄ ICE · 🌲 FOREST · ▲ MOUNTAIN · 🌾 PLAINS · ☀ DESERT · 🌋 VOLCANIC · ≋ COAST</div>
+<div class="legend">SOLID = LAND BORDER · DASHED = SEA ROUTE</div>
+      <div class="regionLabel" style="left:60px;top:25px">FROSTLANDS</div>
+      <div class="regionLabel" style="left:365px;top:25px">HEARTLANDS</div>
+      <div class="regionLabel" style="left:680px;top:25px">SUNREACH</div>
+<div class="regionBonus" style="left:72px;top:48px">REGION BONUS +2</div>
+<div class="regionBonus" style="left:370px;top:48px">REGION BONUS +3</div>
+<div class="regionBonus" style="left:690px;top:48px">REGION BONUS +2</div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div id="status">Select one of your territories.</div><div id="regionStatus" class="small" style="margin-top:3px"></div>
+    <div class="controls">
+      <button id="reinforce">+ REINFORCE</button>
+      <button class="primary" id="attack">⚔ ATTACK</button>
+      <button id="fortify">↔ MOVE</button><button id="end">END TURN</button>
+    </div>
+  </div>
+</div>
+<script>
+(()=>{'use strict';
+const terrain=['snow','snow','forestland','coastal','mountainland','plains','forestland','volcanic','plains','desert','coastal','forestland','volcanic','coastal'];
+const terrainIcon=['❄','❄','🌲','≋','▲','🌾','🌲','🌋','🌾','☀','≋','🌲','🌋','≋'];
+const defs=[
+['Glacier',90,95],['Tundra',225,70],['Pinehold',120,220],['Iron Coast',265,205],
+['Highland',390,95],['Crossroads',420,230],['Southmarch',370,375],['Ember Bay',525,420],
+['Goldplain',555,115],['Red Mesa',625,245],['Sun Coast',750,120],['Jade Reach',770,285],
+['Storm Isle',665,420],['Far Cape',810,435]
+];
+const links=[[0,1],[0,2],[1,3],[1,4],[2,3],[2,6],[3,4],[3,5],[3,6],[4,5],[4,8],[5,6],[5,8],[5,9],[6,7],[6,9],[7,9],[7,12],[8,9],[8,10],[9,10],[9,11],[9,12],[10,11],[11,12],[11,13],[12,13]];
+let state,selected=null,attackFrom=null,attackTarget=null,busy=false,scale=1,moveMode=false;
+const $=s=>document.querySelector(s),board=$('#board'),routes=$('#routes'),status=$('#status');
+function fresh(){
+ try{clearTransientFX()}catch(e){}
+ state={turn:'blue',reserve:5,round:1,lands:defs.map((d,i)=>({owner:i%2?'red':'blue',army:3+(i%3)}))};
+ selected=null;attackFrom=null;save();render();fit();setTimeout(()=>{try{qaCleanup()}catch(e){}},150);status.textContent='Select one of your territories.';setTimeout(()=>toast('🌎 CONQUEST READY'),150);
+}
+function save(){try{localStorage.setItem('cg.p1',JSON.stringify(state))}catch(e){}}
+function load(){try{let s=JSON.parse(localStorage.getItem('cg.p1'));if(s&&s.lands?.length===defs.length){state=s;return}}catch(e){} fresh()}
+function neighbors(i){return links.flatMap(p=>p[0]===i?[p[1]]:p[1]===i?[p[0]]:[])}
+function drawRoutes(){
+ routes.innerHTML=links.map(([a,b])=>{let A=defs[a],B=defs[b];let dist=Math.hypot(A[1]-B[1],A[2]-B[2]); return `<line data-a="${a}" data-b="${b}" class="route ${dist>185?'sea':'land'}" x1="${A[1]+52}" y1="${A[2]+33}" x2="${B[1]+52}" y2="${B[2]+33}"/>`}).join('');
+}
+
+function drawMini(){
+ let m=$('#miniMap'); if(!m)return;
+ m.innerHTML='<div style="position:absolute;left:5px;top:3px;font-size:7px;color:#7890a5">TACTICAL MAP</div>';
+ state.lands.forEach((l,i)=>{let p=document.createElement('span');p.style.left=(8+defs[i][1]/9.5)+'px';p.style.top=(13+defs[i][2]/10)+'px';p.style.background=l.owner==='blue'?'#36a9ff':'#ff5364';m.appendChild(p)});
+}
+
+const regions=[
+ {name:'FROSTLANDS',ids:[0,1,2,3],bonus:2},
+ {name:'HEARTLANDS',ids:[4,5,6,7,8,9],bonus:3},
+ {name:'SUNREACH',ids:[10,11,12,13],bonus:2}
+];
+function regionBonus(owner){
+ return regions.reduce((n,r)=>n+(r.ids.every(i=>state.lands[i].owner===owner)?r.bonus:0),0);
+}
+function regionText(){
+ return regions.map(r=>{
+  let own=r.ids.map(i=>state.lands[i].owner);
+  let who=own.every(x=>x==='blue')?'YOU':own.every(x=>x==='red')?'AI':'CONTESTED';
+  return `${r.name} ${who}${who!=='CONTESTED'?' +'+r.bonus:''}`;
+ }).join(' · ');
+}
+function friendlyPath(a,b,owner){
+ let seen=new Set([a]),q=[a];
+ while(q.length){let x=q.shift();if(x===b)return true;for(let n of neighbors(x))if(!seen.has(n)&&state.lands[n].owner===owner){seen.add(n);q.push(n)}}
+ return false;
+}
+function render(){
+ board.querySelectorAll('.t').forEach(x=>x.remove());
+ state.lands.forEach((l,i)=>{
+  let d=defs[i],el=document.createElement('div');
+  el.className=`t ${l.owner} ${terrain[i]}${selected===i?' sel':''}`;
+  if(selected!==null&&neighbors(selected).includes(i))el.classList.add('target');
+  el.style.left=d[1]+'px';el.style.top=d[2]+'px';
+  let formation=l.army<=2?'scout':l.army<=5?'fireteam':l.army<=9?'column':'battalion';
+  let count=formation==='scout'?1:formation==='fireteam'?2:formation==='column'?4:6;
+  let label=formation==='scout'?'SCOUT':formation==='fireteam'?'FIRETEAM':formation==='column'?'COLUMN':'BATTALION';
+  let one='<i class="soldier"><b class="helmet"></b><b class="rifle"></b><b class="legL"></b><b class="legR"></b></i>';
+  let mood=l.army<=2?'worried':l.army>=10?'angry':'';
+  let moodIcon=l.army<=2?'😰':l.army>=10?'😠':'';
+  let troops='<div class="unitSquad '+formation+' '+mood+'">'+one.repeat(count)+'</div><div class="formationTag">'+label+'</div>'+(moodIcon?'<div class="mood">'+moodIcon+'</div>':'');
+  let base=l.army>=12?'<div class="baseBuild fortress" data-base="'+i+'">🏰<b class="lvl">FORT</b></div>':l.army>=9?'<div class="baseBuild tower" data-base="'+i+'">🗼<b class="lvl">TOWER</b></div>':l.army>=6?'<div class="baseBuild barricade" data-base="'+i+'">🧱<b class="lvl">WALL</b></div>':l.army>=3?'<div class="baseBuild camp" data-base="'+i+'">⛺<b class="lvl">CAMP</b></div>':'';
+  el.innerHTML=`<div class="terrain">${terrainIcon[i]}</div><div class="fort">${l.army>=7?'▰':''}</div><div class="name">${d[0]}</div><div class="army">${l.army}</div>${troops}${base}${l.army<=2?'<div class="damageMark">💨</div>':''}`;
+  el.onclick=()=>pick(i);
+  let squad=el.querySelector('.unitSquad');
+  if(squad)squad.onclick=(ev)=>{ev.stopPropagation();showUnitCard(i,el)};
+  let bb=el.querySelector('.baseBuild');if(bb)bb.onclick=(ev)=>{ev.stopPropagation();let level=l.army>=12?'FORTRESS':l.army>=9?'WATCHTOWER':l.army>=6?'BARRICADE':'FIELD CAMP';toast(`${level} · ${defs[i][0]} · ${l.army} ARMIES`);bb.classList.add('buildPop');setTimeout(()=>bb.classList.remove('buildPop'),500)};
+  board.appendChild(el);
+ });
+ $('#turn').textContent=state.turn==='blue'?'YOUR TURN':'AI TURN';
+ $('#reserve').textContent=state.reserve;
+ drawMini();
+ $('#regionStatus').textContent=regionText();
+}
+function pick(i){
+ tapPulse(i);
+ if(busy||state.turn!=='blue')return;
+ if(moveMode&&selected!==null){
+   if(state.lands[i].owner!=='blue')return status.textContent='MOVE: choose another blue territory.';
+   if(i===selected){moveMode=false;status.textContent='Move cancelled.';render();return}
+   if(state.lands[selected].army<2)return status.textContent='Leave at least one army behind.';
+   if(!friendlyPath(selected,i,'blue'))return status.textContent='No connected friendly route to that territory.';
+   let amount=Math.max(1,Math.floor((state.lands[selected].army-1)/2));
+   let from=selected;formationMarch(from,i,'blue',Math.min(6,amount));state.lands[selected].army-=amount;state.lands[i].army+=amount;moveMode=false;selected=i;save();render();
+   status.textContent=`↔ Moved ${amount} armies to ${defs[i][0]}.`;return;
+ }
+ if(selected===null){
+  if(state.lands[i].owner!=='blue'){status.textContent='Choose a blue territory first.';return}
+  selected=i;status.textContent=`${defs[i][0]} selected — ${state.lands[i].army} armies.`;render();previewPaths(i);return;
+ }
+ if(i===selected){selected=null;status.textContent='Selection cleared.';render();return}
+ if(state.lands[i].owner==='blue'){selected=i;status.textContent=`${defs[i][0]} selected.`;render();return}
+ if(neighbors(selected).includes(i)){attackFrom=selected;openCombat(selected,i)}
+ else status.textContent='That territory does not share a border.';
+}
+
+function openCombat(a,b){
+ if(state.lands[a].army<2){status.textContent='You need at least 2 armies to attack.';return}
+ attackFrom=a;attackTarget=b;
+ $('#cpTitle').textContent=`${defs[a][0]}  ⚔  ${defs[b][0]}`;
+ $('#combatInfo').textContent=`Attacker ${state.lands[a].army} armies · Defender ${state.lands[b].army} armies`;
+ $('#combatPanel').classList.add('show');
+}
+function closeCombat(){ $('#combatPanel').classList.remove('show'); }
+
+
+
+function reactionAt(i,text){
+ let fx=$('#fx'),A=defs[i],r=document.createElement('div');r.className='reactionBubble';r.textContent=text;r.style.left=(A[1]+25)+'px';r.style.top=(A[2]-15)+'px';fx.appendChild(r);setTimeout(()=>r.remove(),1200);
+}
+function battleReactions(a,b,aloss,dloss){
+ if(aloss>dloss){reactionAt(a,'😵 FALL BACK!');reactionAt(b,'😤 HOLD!')}
+ else if(dloss>aloss){reactionAt(a,'😠 PUSH!');reactionAt(b,'😰 OH NO!')}
+ else {reactionAt(a,'😬 AGAIN!');reactionAt(b,'😬 HOLD LINE!')}
+}
+function cheerTerritory(i){
+ setTimeout(()=>{let e=board.querySelectorAll('.t')[i];let sq=e&&e.querySelector('.unitSquad');if(sq){sq.classList.add('cheer');setTimeout(()=>sq.classList.remove('cheer'),1600)}reactionAt(i,'🎉 WE GOT IT!')},180);
+}
+function captureCeremony(a,b,owner){
+ let fx=$('#fx'),A=defs[a],B=defs[b],x=B[1]+52,y=B[2]+35,enemy=owner==='blue'?'red':'blue';
+ /* old flag falls */
+ let old=document.createElement('div');old.className='captureFlag '+enemy;old.innerHTML='<i class="cloth"></i>';old.style.left=(x+16)+'px';old.style.top=(y-48)+'px';fx.appendChild(old);
+ setTimeout(()=>old.classList.add('flagFall'),80);
+ /* defenders run away */
+ for(let n=0;n<3;n++)setTimeout(()=>{let r=document.createElement('div');r.className='retreatIcon';r.textContent='🪖';r.style.left=(x+n*12-18)+'px';r.style.top=(y+n*5)+'px';fx.appendChild(r);r.animate([{transform:'translate(0,0) rotate(0)'},{transform:`translate(${owner==='blue'?85:-85}px,55px) rotate(${owner==='blue'?20:-20}deg)`,opacity:0}],{duration:620,easing:'ease-in',fill:'forwards'});setTimeout(()=>r.remove(),650)},n*90);
+ /* winners visibly enter */
+ setTimeout(()=>formationMarch(a,b,owner,4),280);
+ setTimeout(()=>{old.remove();let f=document.createElement('div');f.className='captureFlag '+owner+' flagRise';f.innerHTML='<i class="cloth"></i>';f.style.left=(x+16)+'px';f.style.top=(y-48)+'px';fx.appendChild(f);
+  let ban=document.createElement('div');ban.className='captureBanner';ban.textContent='🚩 '+defs[b][0].toUpperCase()+' CAPTURED';ban.style.left=(x-62)+'px';ban.style.top=(y-70)+'px';fx.appendChild(ban);
+  confettiAt(b);setTimeout(()=>{f.remove();ban.remove()},1350);
+ },820);
+}
+
+let cameraTimer=null;
+
+function clearTransientFX(){
+ let fx=$('#fx');if(!fx)return;
+ [...fx.children].forEach(el=>{
+  if(!el.matches('#warTicker') && !el.classList.contains('patrol')) el.remove();
+ });
+ clearActivePaths();
+}
+function sequenceBattleFX(a,b,owner,army){
+ cameraFocus(a,b);
+ formationMarch(a,b,owner,Math.min(6,army-1));
+ setTimeout(()=>defensiveFire(a,b),250);
+ setTimeout(()=>battleFX(a,b),330);
+ if(army>=5)setTimeout(()=>{army>=9?airStrike(a,b):cartoonTankRun(a,b)},430);
+}
+function cameraFocus(a,b){
+ let wrap=$('#boardWrap'),A=defs[a],B=defs[b],mx=(A[1]+B[1])/2+52,my=(A[2]+B[2])/2+35;
+ let base=Math.min(wrap.clientWidth/940,wrap.clientHeight/580,1.15);
+ let z=Math.min(base*1.28,1.35);
+ let dx=(460-mx)*z,dy=(280-my)*z;
+ board.classList.add('cinematic');$('#cinemaBars').classList.add('on');
+ board.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${z})`;
+ clearTimeout(cameraTimer);cameraTimer=setTimeout(cameraReset,1450);
+}
+function cameraHit(){
+ board.classList.remove('cameraShake');void board.offsetWidth;board.classList.add('cameraShake');
+ setTimeout(()=>board.classList.remove('cameraShake'),320);
+}
+function cameraReset(){
+ board.classList.remove('cinematic','cameraShake');board.style.marginLeft='';board.style.marginTop='';$('#cinemaBars').classList.remove('on');fit();
+}
+function clashBattle(a,b,aloss,dloss){
+ let fx=$('#fx'),A=defs[a],B=defs[b],mx=(A[1]+B[1])/2+52,my=(A[2]+B[2])/2+35;
+ let units=[];
+ function side(owner,startx,dir,n){
+  for(let k=0;k<n;k++){let u=document.createElement('i');u.className='clashUnit '+owner;u.style.left=(startx+(k%3)*14*dir)+'px';u.style.top=(my+(Math.floor(k/3)-.5)*22)+'px';fx.appendChild(u);units.push({u,owner,dir});
+   u.animate([{transform:'translate(0,0)'},{transform:`translate(${dir*45}px,${(k%2?5:-5)}px)`}],{duration:330,easing:'ease-in-out',fill:'forwards'});
+  }
+ }
+ side(state.lands[a].owner,mx-78,1,Math.min(5,state.lands[a].army));
+ side(state.lands[b].owner,mx+78,-1,Math.min(5,state.lands[b].army));
+ let cloud=document.createElement('div');cloud.className='battleCloud';cloud.textContent='☁️';cloud.style.left=(mx-24)+'px';cloud.style.top=(my-30)+'px';fx.appendChild(cloud);
+ cameraHit();for(let q=0;q<5;q++)setTimeout(()=>{let h=document.createElement('i');h.className='hitStar';h.textContent=q%2?'💥':'⭐';h.style.left=(mx-20+Math.random()*40)+'px';h.style.top=(my-22+Math.random()*35)+'px';fx.appendChild(h);setTimeout(()=>h.remove(),500)},250+q*110);
+ setTimeout(()=>{
+   let blueLoss=state.lands[a].owner==='blue'?aloss:dloss,redLoss=state.lands[a].owner==='red'?aloss:dloss;
+   let removed={blue:0,red:0};
+   units.forEach(o=>{let lim=o.owner==='blue'?blueLoss:redLoss;if(removed[o.owner]<lim){removed[o.owner]++;o.u.classList.add('retreating');o.u.animate([{opacity:1},{transform:`translate(${o.dir*-90}px,30px) rotate(90deg)`,opacity:0}],{duration:450,fill:'forwards'})}});
+ },650);
+ setTimeout(()=>{units.forEach(o=>o.u.remove());cloud.remove()},1250);
+}
+function multiAttack(a,b,wanted,blitz=false){
+ if(busy)return;
+ let A=state.lands[a],B=state.lands[b]; if(A.army<2||A.owner===B.owner){closeCombat();return}
+ let ac=Math.min(wanted,A.army-1,3),dc=Math.min(2,B.army);
+ let ar=Array.from({length:ac},die).sort((x,y)=>y-x),dr=Array.from({length:dc},die).sort((x,y)=>y-x);
+ busy=true;sequenceBattleFX(a,b,A.owner,A.army);
+ let pairs=Math.min(ar.length,dr.length),aloss=0,dloss=0;
+ for(let i=0;i<pairs;i++){if(ar[i]>dr[i])dloss++;else aloss++}
+ setTimeout(()=>{clashBattle(a,b,aloss,dloss);battleReactions(a,b,aloss,dloss)},520);
+ $('#battleTitle').textContent='BATTLE COMMAND';
+ $('#atkName').textContent=defs[a][0].toUpperCase();
+ $('#defName').textContent=defs[b][0].toUpperCase();
+ $('#dice').innerHTML=ar.map(x=>`<i class="diebox">${x}</i>`).join('')+' VS '+dr.map(x=>`<i class="diebox">${x}</i>`).join('');
+ $('#battleText').textContent=aloss<dloss?'ATTACKERS BREAK THROUGH!':aloss>dloss?'DEFENDERS HOLD THE LINE!':'EVEN EXCHANGE!';
+ $('#casLine').textContent=`ATTACKER −${aloss}   ·   DEFENDER −${dloss}`;
+ $('#battle').classList.add('show');
+ setTimeout(()=>{
+   A.army-=aloss;B.army-=dloss;
+   for(let i=0;i<aloss;i++)casualtyFX(a,A.owner);
+   for(let i=0;i<dloss;i++)casualtyFX(b,B.owner);
+   if(B.army<=0){B.owner=A.owner;B.army=1;A.army--;status.textContent=`🚩 ${defs[b][0]} captured!`;setTimeout(()=>{captureCeremony(a,b,A.owner);cheerTerritory(b);celebrateCapture(b,A.owner)},720);confettiAt(b);toast(`🚩 ${defs[b][0]} CAPTURED`);setTimeout(()=>{let e=board.querySelectorAll('.t')[b];if(e)e.classList.add('capturePop')},20);closeCombat()}
+   else status.textContent=`Battle: ${defs[a][0]} ${A.army} · ${defs[b][0]} ${B.army}`;
+   selected=a;busy=false;save();render();checkWin();setTimeout(cameraReset,1150);
+   setTimeout(()=>$('#battle').classList.remove('show'),350);
+   if(blitz&&B.owner!=='blue'&&A.owner==='blue'&&A.army>1)setTimeout(()=>multiAttack(a,b,3,true),500);
+ },650);
+}
+function reinforce(){
+ if(busy||state.turn!=='blue'||selected===null)return status.textContent='Select your territory first.';
+ if(state.reserve<1)return status.textContent='No reserve armies left this turn.';
+ state.lands[selected].army++;state.reserve--;save();render();status.textContent=`Reinforced ${defs[selected][0]}.`;toast(`+1 ARMY · ${defs[selected][0]}`);
+}
+const die=()=>1+Math.floor(Math.random()*6);
+function doAttack(a,b,ai=false){
+ if(busy)return;
+ let A=state.lands[a],B=state.lands[b];
+ if(A.owner===B.owner)return;
+ if(A.army<2){status.textContent='You need at least 2 armies to attack.';return}
+ busy=true;
+ unitCharge(a,b,A.owner);
+ battleFX(a,b);
+ let ad=die(),bd=die(); showBattle(defs[a][0]+' ⚔ '+defs[b][0],ad,bd,`${ad} vs ${bd}`);
+ setTimeout(()=>{
+  if(ad>bd){casualtyFX(b,B.owner);B.army--; if(B.army<=0){B.owner=A.owner;B.army=1;A.army--;status.textContent=`🚩 ${defs[b][0]} captured!`; captureCeremony(a,b,A.owner); celebrateCapture(b,A.owner); confettiAt(b);toast(`🚩 ${defs[b][0]} CAPTURED`); setTimeout(()=>{let e=board.querySelectorAll('.t')[b];if(e)e.classList.add('captureFlash')},20);}}
+  else {casualtyFX(a,A.owner);A.army--;status.textContent=`Defense holds at ${defs[b][0]}.`}
+  selected=ai?null:a;busy=false;save();render();checkWin();
+ },700);
+}
+
+
+
+
+function defensiveFire(a,b){
+ let fx=$('#fx'),A=defs[a],B=defs[b],x=B[1]+52,y=B[2]+34,tx=A[1]+52,ty=A[2]+34;
+ for(let n=0;n<3;n++)setTimeout(()=>{
+  let p=document.createElement('i');p.className='defShot';p.style.left=x+'px';p.style.top=(y+n*5-5)+'px';fx.appendChild(p);
+  p.animate([{transform:'translate(0,0)'},{transform:`translate(${(tx-x)*.55}px,${(ty-y)*.55}px)`}],{duration:260});
+  setTimeout(()=>p.remove(),300);
+ },n*75);
+}
+function ambientPatrol(){
+ if(busy)return;
+ let owned=state.lands.map((l,i)=>({l,i})).filter(x=>x.l.army>=4);
+ if(!owned.length)return;
+ let o=owned[Math.floor(Math.random()*owned.length)],ns=neighbors(o.i).filter(n=>state.lands[n].owner===o.l.owner);
+ if(!ns.length)return;
+ let b=ns[Math.floor(Math.random()*ns.length)],A=defs[o.i],B=defs[b],fx=$('#fx'),p=document.createElement('div');
+ p.className='patrol';p.textContent=Math.random()>.5?'✈️':'🚁';p.style.left=(A[1]+50)+'px';p.style.top=(A[2]+25)+'px';fx.appendChild(p);
+ p.animate([{transform:'translate(-50%,-50%) scale(.7)'},{transform:`translate(${B[1]-A[1]}px,${B[2]-A[2]}px) translate(-50%,-50%) scale(1)`}],{duration:1600,easing:'linear'});
+ setTimeout(()=>p.remove(),1650);
+}
+function victoryParade(owner){
+ let ids=state.lands.map((l,i)=>l.owner===owner?i:-1).filter(i=>i>=0).slice(0,7);
+ ids.forEach((i,n)=>setTimeout(()=>{cartoonMarch(i,null);celebrateCapture(i,owner)},n*180));
+}
+setInterval(ambientPatrol,4200);
+
+function impactFX(x,y,water=false){
+ let fx=$('#fx');
+ let flash=document.createElement('i');flash.className='fxFlash';flash.style.left=(x-9)+'px';flash.style.top=(y-9)+'px';fx.appendChild(flash);
+ flash.animate([{transform:'scale(.2)',opacity:1},{transform:'scale(2.8)',opacity:0}],{duration:330});setTimeout(()=>flash.remove(),350);
+ for(let n=0;n<8;n++){let sp=document.createElement('i');sp.className='fxSpark';sp.style.left=x+'px';sp.style.top=y+'px';fx.appendChild(sp);let ang=(Math.PI*2*n/8),dist=25+Math.random()*30;sp.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px) rotate(${n*70}deg) scale(.2)`,opacity:0}],{duration:420});setTimeout(()=>sp.remove(),450)}
+ for(let n=0;n<4;n++){let sm=document.createElement('i');sm.className='fxSmoke';sm.style.left=(x-7)+'px';sm.style.top=(y-5)+'px';fx.appendChild(sm);sm.animate([{transform:'translate(0,0) scale(.5)',opacity:.8},{transform:`translate(${(Math.random()-.5)*35}px,${-20-Math.random()*30}px) scale(2.1)`,opacity:0}],{duration:700});setTimeout(()=>sm.remove(),730)}
+ if(water){for(let n=0;n<3;n++){let r=document.createElement('i');r.className='fxRipple';r.style.left=(x-10)+'px';r.style.top=(y-4)+'px';fx.appendChild(r);r.animate([{transform:'scale(.3)',opacity:1},{transform:`scale(${2+n})`,opacity:0}],{duration:650+n*100});setTimeout(()=>r.remove(),900)}}
+}
+function marchDustFX(x,y){
+ let fx=$('#fx'),d=document.createElement('i');d.className='fxDust';d.style.left=x+'px';d.style.top=y+'px';fx.appendChild(d);d.animate([{transform:'scale(.5)',opacity:.7},{transform:'translate(-8px,-10px) scale(2)',opacity:0}],{duration:480});setTimeout(()=>d.remove(),500);
+}
+function popFX(x,y,ch='💥'){
+ impactFX(x,y,ch==='🌊');
+ let fx=$('#fx'),p=document.createElement('div');p.className='starburst';p.textContent=ch;p.style.left=x+'px';p.style.top=y+'px';fx.appendChild(p);setTimeout(()=>p.remove(),600);
+}
+
+
+
+function navyRun(i,target=null){
+ let fx=$('#fx'),A=defs[i],B=target!==null?defs[target]:null;
+ /* Offshore lanes keep ships visually in ocean rather than driving across land. */
+ let leftSide=A[1]<460;
+ let sx=leftSide?285:610, sy=Math.max(115,Math.min(455,A[2]+90));
+ let tx=B?(B[1]<460?315:625):(leftSide?330:650), ty=B?Math.max(110,Math.min(455,B[2]+80)):Math.max(120,Math.min(440,A[2]+150));
+ let ship=document.createElement('div');ship.className='warship';
+ ship.innerHTML='<div class="hull"><i class="eye"></i></div><div class="deck"></div><div class="gun"></div>';
+ ship.style.left=sx+'px';ship.style.top=sy+'px';fx.appendChild(ship);
+ let dx=tx-sx,dy=ty-sy,ang=Math.atan2(dy,dx)*180/Math.PI;
+ ship.style.transform=`translate(-50%,-50%) rotate(${Math.max(-15,Math.min(15,ang))}deg)`;
+ ship.animate([{left:sx+'px',top:sy+'px'},{left:tx+'px',top:ty+'px'}],{duration:1250,easing:'ease-in-out',fill:'forwards'});
+ for(let q=1;q<6;q++)setTimeout(()=>{let w=document.createElement('i');w.className='wake';w.style.left=(sx+dx*q/6-30)+'px';w.style.top=(sy+dy*q/6+12)+'px';fx.appendChild(w);setTimeout(()=>w.remove(),750)},q*190);
+ setTimeout(()=>{
+  let gun=ship.querySelector('.gun');gun.animate([{transform:'rotate(-5deg) translateX(0)'},{transform:'rotate(-5deg) translateX(-8px)'},{transform:'rotate(-5deg) translateX(0)'}],{duration:230});
+  let destx=B?B[1]+52:tx+110,desty=B?B[2]+35:ty-45;
+  let sh=document.createElement('i');sh.className='shell';sh.style.left=(tx+35)+'px';sh.style.top=(ty-5)+'px';fx.appendChild(sh);
+  sh.animate([{transform:'translate(0,0)'},{transform:`translate(${destx-tx-35}px,${desty-ty+5}px)`}],{duration:430,easing:'ease-out'});
+  setTimeout(()=>{sh.remove();let sp=document.createElement('i');sp.className='splash';sp.textContent=B?'💥':'🌊';sp.style.left=destx+'px';sp.style.top=desty+'px';fx.appendChild(sp);setTimeout(()=>sp.remove(),600)},420);
+ },1280);
+ setTimeout(()=>ship.remove(),1900);
+}
+function airStrike(i,target=null){
+ let fx=$('#fx'),A=defs[i],B=target!==null?defs[target]:null;
+ let sx=-80,sy=Math.max(65,A[2]-55),tx=B?B[1]+52:Math.min(820,A[1]+190),ty=B?B[2]+35:A[2]+35,ex=1000,ey=Math.max(45,ty-80);
+ let p=document.createElement('div');p.className='warplane';
+ p.innerHTML='<div class="body"><i class="nose"></i><i class="wing"></i><i class="cockpit"></i><b class="face">••</b></div>';
+ p.style.left=sx+'px';p.style.top=sy+'px';fx.appendChild(p);
+ let shadow=document.createElement('i');shadow.className='airShadow';shadow.style.left=sx+'px';shadow.style.top=(sy+65)+'px';fx.appendChild(shadow);
+ let k1x=tx-120,k1y=ty-80,k2x=tx+80,k2y=ty-55;
+ let frames=[
+  {left:sx+'px',top:sy+'px',transform:'rotate(-8deg) scale(.8)'},
+  {left:k1x+'px',top:k1y+'px',transform:'rotate(9deg) scale(1.05)',offset:.42},
+  {left:k2x+'px',top:k2y+'px',transform:'rotate(-6deg) scale(1.12)',offset:.65},
+  {left:ex+'px',top:ey+'px',transform:'rotate(-12deg) scale(.85)'}
+ ];
+ p.animate(frames,{duration:1700,easing:'ease-in-out',fill:'forwards'});
+ shadow.animate([{left:sx+'px'},{left:ex+'px'}],{duration:1700,easing:'ease-in-out',fill:'forwards'});
+ for(let q=1;q<7;q++)setTimeout(()=>{let tr=document.createElement('i');tr.className='airTrail';tr.style.left=(sx+(ex-sx)*q/7-50)+'px';tr.style.top=(sy+(ey-sy)*q/7+16)+'px';tr.style.width='70px';fx.appendChild(tr);setTimeout(()=>tr.remove(),850)},q*180);
+ setTimeout(()=>{
+  let bomb=document.createElement('div');bomb.className='bomb';bomb.textContent='●';bomb.style.left=(tx-30)+'px';bomb.style.top=(ty-65)+'px';fx.appendChild(bomb);
+  bomb.animate([{transform:'translate(0,0) scale(.7)'},{transform:'translate(28px,65px) scale(1.2) rotate(180deg)'}],{duration:420,easing:'ease-in'});
+  setTimeout(()=>{bomb.remove();popFX(tx,ty,'💥');speech(tx-30,ty-35,'AIR STRIKE!')},410);
+ },900);
+ setTimeout(()=>{p.remove();shadow.remove()},1750);
+}
+function cartoonTankRun(i,target=null){
+ let fx=$('#fx'),A=defs[i],x=A[1]+52,y=A[2]+35,l=state.lands[i];
+ let tx,ty;if(target!==null){let B=defs[target];tx=B[1]+52;ty=B[2]+35}else{tx=Math.min(835,x+190);ty=Math.max(65,Math.min(475,y+55))}
+ let t=document.createElement('div');t.className='cartoonTank';
+ t.innerHTML='<div class="turret"><i class="barrel"></i><i class="eye"></i><b class="mouth">⌣</b></div><div class="track"></div>';
+ t.style.left=x+'px';t.style.top=y+'px';fx.appendChild(t);
+ let ang=Math.atan2(ty-y,tx-x)*180/Math.PI;
+ t.style.transform=`translate(-50%,-50%) rotate(${ang}deg)`;
+ let dx=tx-x,dy=ty-y;
+ t.animate([{left:x+'px',top:y+'px'},{left:tx+'px',top:ty+'px'}],{duration:1000,easing:'ease-in-out',fill:'forwards'});
+ for(let q=1;q<6;q++)setTimeout(()=>{let sm=document.createElement('i');sm.className='tankSmoke';sm.style.left=(x+dx*q/6)+'px';sm.style.top=(y+dy*q/6)+'px';fx.appendChild(sm);setTimeout(()=>sm.remove(),800)},q*145);
+ setTimeout(()=>{
+   let bar=t.querySelector('.barrel');bar.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(0)'}],{duration:220});
+   let m=document.createElement('i');m.className='tankMuzzle';m.textContent='💥';m.style.left=(tx+22)+'px';m.style.top=(ty-16)+'px';fx.appendChild(m);
+   let sh=document.createElement('i');sh.className='shell';sh.style.left=(tx+20)+'px';sh.style.top=ty+'px';fx.appendChild(sh);
+   sh.animate([{transform:'translate(0,0)'},{transform:'translate(75px,-8px)'}],{duration:260});
+   setTimeout(()=>{sh.remove();m.remove();popFX(tx+85,ty-8,'💥')},270);
+ },1020);
+ setTimeout(()=>t.remove(),1450);
+}
+function vehicleRun(i,type,target=null){
+ let fx=$('#fx'),A=defs[i],l=state.lands[i],x=A[1]+50,y=A[2]+30;
+ let tx,ty;
+ if(target!==null){let B=defs[target];tx=B[1]+50;ty=B[2]+30}
+ else {tx=Math.max(60,Math.min(830,x+(Math.random()>.5?210:-210)));ty=Math.max(70,Math.min(480,y+(Math.random()-.5)*160))}
+ let v=document.createElement('div');v.className='vehicle '+type;
+ v.textContent=type==='tank'?'🛞':type==='plane'?'✈️':'🚢';
+ v.style.left=x+'px';v.style.top=y+'px';fx.appendChild(v);
+ let dur=type==='plane'?650:type==='tank'?900:1100;
+ v.animate([{transform:'translate(-50%,-50%) scale(.8)'},{transform:`translate(${tx-x}px,${ty-y}px) translate(-50%,-50%) scale(1.15)`}],{duration:dur,easing:'ease-in-out'});
+ if(type==='tank'){
+   setTimeout(()=>{let sh=document.createElement('i');sh.className='shell';sh.style.left=(x+20)+'px';sh.style.top=y+'px';fx.appendChild(sh);
+   sh.animate([{transform:'translate(0,0)'},{transform:`translate(${tx-x-20}px,${ty-y}px)`}],{duration:360});setTimeout(()=>{sh.remove();popFX(tx,ty)},350)},280);
+ } else if(type==='plane'){setTimeout(()=>popFX(tx,ty,'💫'),dur-120)}
+ else {setTimeout(()=>popFX(tx,ty,'🌊'),dur-100)}
+ setTimeout(()=>v.remove(),dur+80);
+}
+function celebrateCapture(i,owner){
+ let fx=$('#fx'),A=defs[i],icons=owner==='blue'?['⭐','🎉','🚩','✨']:['💢','🚩','⭐','🔥'];
+ icons.forEach((ch,n)=>setTimeout(()=>{let p=document.createElement('div');p.className='celebrate';p.textContent=ch;p.style.left=(A[1]+25+n*15)+'px';p.style.top=(A[2]+25)+'px';fx.appendChild(p);setTimeout(()=>p.remove(),1150)},n*90));
+ speech(A[1]+25,A[2]-5,owner==='blue'?'TERRITORY TAKEN!':'AI CAPTURE!');
+}
+
+function toast(msg){
+ let t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('on'),1100);
+}
+function confettiAt(i){
+ let fx=$('#fx'),A=defs[i],bits=['★','◆','●','✦','▰'];
+ for(let n=0;n<14;n++){let p=document.createElement('i');p.className='confetti';p.textContent=bits[n%bits.length];p.style.left=(A[1]+52)+'px';p.style.top=(A[2]+35)+'px';p.style.setProperty('--dx',((Math.random()-.5)*150)+'px');p.style.setProperty('--dy',(-25-Math.random()*100)+'px');fx.appendChild(p);setTimeout(()=>p.remove(),1250)}
+}
+function tapPulse(i){
+ let e=board.querySelectorAll('.t')[i];if(!e)return;e.animate([{transform:'scale(1)'},{transform:'scale(.92)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],{duration:220});
+}
+
+function clampFloatingPanels(){
+ let c=$('#unitCard');
+ if(c&&c.classList.contains('show')){
+   let maxX=940-230,maxY=580-145;
+   c.style.left=Math.max(6,Math.min(maxX,parseFloat(c.style.left)||6))+'px';
+   c.style.top=Math.max(6,Math.min(maxY,parseFloat(c.style.top)||6))+'px';
+ }
+}
+function qaCleanup(){
+ document.querySelectorAll('.routeArrow').forEach(x=>{if(!x.isConnected)x.remove()});
+ let fx=$('#fx');if(fx && fx.children.length>120){
+   [...fx.children].slice(0,fx.children.length-80).forEach(x=>x.remove());
+ }
+ clampFloatingPanels();
+}
+setInterval(qaCleanup,5000);
+function showUnitCard(i,el){
+ let c=$('#unitCard'),l=state.lands[i],d=defs[i];
+ $('#ucName').textContent=d[0]+' ARMY';
+ $('#ucText').textContent=`${l.army} armies · ${l.army<=2?'Scout':l.army<=5?'Fireteam':l.army<=9?'Column':'Battalion'} formation · ${l.owner==='blue'?'Your command':'Enemy command'} · tap MARCH to deploy.`;
+ c.dataset.i=i;c.classList.add('show');setTimeout(clampFloatingPanels,0);
+ let x=Math.min(680,d[1]+80),y=Math.max(8,d[2]-55);c.style.left=x+'px';c.style.top=y+'px';
+}
+function speech(x,y,text){
+ let fx=$('#fx'),p=document.createElement('div');p.className='speech';p.textContent=text;p.style.left=x+'px';p.style.top=y+'px';fx.appendChild(p);setTimeout(()=>p.remove(),950);
+}
+
+
+function clearActivePaths(){
+ routes.querySelectorAll('.route').forEach(x=>x.classList.remove('activePath'));
+ board.querySelectorAll('.routeArrow').forEach(x=>x.remove());
+}
+function previewPaths(i){
+ clearActivePaths();
+ neighbors(i).forEach(n=>{
+  let ln=[...routes.querySelectorAll('.route')].find(x=>(+x.dataset.a===i&&+x.dataset.b===n)||(+x.dataset.b===i&&+x.dataset.a===n));
+  if(ln)ln.classList.add('activePath');
+  let A=defs[i],B=defs[n],ar=document.createElement('div');ar.className='routeArrow';ar.textContent='➤';
+  ar.style.left=((A[1]+B[1])/2+45)+'px';ar.style.top=((A[2]+B[2])/2+24)+'px';
+  ar.style.transform=`rotate(${Math.atan2(B[2]-A[2],B[1]-A[1])*180/Math.PI}deg)`;board.appendChild(ar);
+ });
+}
+function highlightRoute(a,b,on=true){
+ let A=defs[a],B=defs[b],lines=[...routes.querySelectorAll('line')];
+ let line=lines.find((el)=>{
+  let x1=+el.getAttribute('x1'),y1=+el.getAttribute('y1'),x2=+el.getAttribute('x2'),y2=+el.getAttribute('y2');
+  let ax=A[1]+52,ay=A[2]+33,bx=B[1]+52,by=B[2]+33;
+  return (Math.abs(x1-ax)<2&&Math.abs(y1-ay)<2&&Math.abs(x2-bx)<2&&Math.abs(y2-by)<2)||(Math.abs(x2-ax)<2&&Math.abs(y2-ay)<2&&Math.abs(x1-bx)<2&&Math.abs(y1-by)<2);
+ });
+ if(line)line.classList.toggle('routeGlow',on);
+}
+function formationMarch(a,b,owner,count=4){
+ let fx=$('#fx'),A=defs[a],B=defs[b],x=A[1]+52,y=A[2]+35,tx=B[1]+52,ty=B[2]+35;
+ highlightRoute(a,b,true);
+ let nmax=Math.min(6,Math.max(2,count));
+ for(let n=0;n<nmax;n++){
+  setTimeout(()=>{
+   let u=document.createElement('i');u.className='marchTrooper '+owner;
+   let row=Math.floor(n/3),col=n%3,ox=(col-1)*15,oy=row*17;
+   u.style.left=(x+ox)+'px';u.style.top=(y+oy)+'px';fx.appendChild(u);
+   let dx=tx-x,dy=ty-y;
+   u.animate([{transform:'translate(0,0) rotate(-5deg)'},{transform:`translate(${dx*.5}px,${dy*.5-5}px) rotate(5deg)`,offset:.5},{transform:`translate(${dx}px,${dy}px) rotate(-4deg)`}],{duration:820+n*45,easing:'ease-in-out'});
+   for(let q=1;q<5;q++)setTimeout(()=>{let d=document.createElement('i');d.className='footDust';marchDustFX(x+ox+dx*q/5,y+oy+dy*q/5+15);d.style.left=(x+ox+dx*q/5)+'px';d.style.top=(y+oy+dy*q/5+15)+'px';fx.appendChild(d);setTimeout(()=>d.remove(),580)},q*140);
+   setTimeout(()=>u.remove(),900+n*45);
+  },n*65);
+ }
+ setTimeout(()=>{highlightRoute(a,b,false);let r=document.createElement('i');r.className='arrivalRing';r.style.left=(tx-12)+'px';r.style.top=(ty+15)+'px';fx.appendChild(r);setTimeout(()=>r.remove(),650)},1050);
+}
+function cartoonMarch(a,b=null){
+ let fx=$('#fx'),A=defs[a],l=state.lands[a];
+ let B=b===null?[null,Math.min(800,A[1]+180),Math.max(55,Math.min(470,A[2]+(Math.random()>.5?70:-70)))]:defs[b];
+ let x=A[1]+52,y=A[2]+35,tx=B[1]+52,ty=B[2]+35;
+ for(let n=0;n<Math.min(4,Math.max(2,Math.ceil(l.army/3)));n++){
+  setTimeout(()=>{
+   let u=document.createElement('div');u.className='cartoonUnit '+l.owner;u.innerHTML='🪖';u.style.left=(x+n*7)+'px';u.style.top=(y+n*3)+'px';fx.appendChild(u);
+   let anim=u.animate([{transform:'translate(-50%,-50%) rotate(-8deg)'},{transform:`translate(${(tx-x)*.5}px,${(ty-y)*.5-9}px) translate(-50%,-50%) rotate(8deg)`,offset:.5},{transform:`translate(${tx-x}px,${ty-y}px) translate(-50%,-50%) rotate(-5deg)`}],{duration:700+n*60,easing:'ease-in-out'});
+   for(let q=0;q<4;q++)setTimeout(()=>{let d=document.createElement('i');d.className='dust';d.style.left=(x+(tx-x)*(q/4))+'px';d.style.top=(y+(ty-y)*(q/4)+18)+'px';fx.appendChild(d);setTimeout(()=>d.remove(),650)},q*130);
+   anim.onfinish=()=>u.remove();
+  },n*90);
+ }
+ speech(x,y-30,l.owner==='blue'?'LET’S MARCH!':'INCOMING!');
+}
+function unitCharge(a,b,owner){
+ cartoonMarch(a,b);
+ let fx=$('#fx'),A=defs[a],B=defs[b],u=document.createElement('div');
+ u.className='moveUnit';u.textContent=owner==='blue'?'♞':'♟';
+ let x=A[1]+52,y=A[2]+35,tx=B[1]+52,ty=B[2]+35;
+ u.style.left=x+'px';u.style.top=y+'px';fx.appendChild(u);
+ u.animate([{transform:'translate(-50%,-50%) scale(.7)'},{transform:`translate(${tx-x}px,${ty-y}px) translate(-50%,-50%) scale(1.25)`}],{duration:420,easing:'ease-in-out'});
+ let dx=tx-x,dy=ty-y,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;
+ for(let q=0;q<3;q++)setTimeout(()=>{let t=document.createElement('div');t.className='tracer';t.style.left=x+'px';t.style.top=(y+q*4-4)+'px';t.style.width=len+'px';t.style.transform=`rotate(${ang}deg)`;fx.appendChild(t);setTimeout(()=>t.remove(),300)},100+q*70);
+ setTimeout(()=>u.remove(),470);
+}
+function casualtyFX(b,owner){
+ let fx=$('#fx'),B=defs[b],c=document.createElement('div');c.className='casualty';c.textContent=owner==='blue'?'♞':'♟';c.style.left=(B[1]+48)+'px';c.style.top=(B[2]+28)+'px';fx.appendChild(c);setTimeout(()=>c.remove(),650);
+}
+function battleFX(a,b){
+ let fx=$('#fx'),A=defs[a],B=defs[b],dot=document.createElement('div');
+ dot.className='shot';fx.appendChild(dot);
+ let x=A[1]+52,y=A[2]+33,tx=B[1]+52,ty=B[2]+33;
+ dot.style.left=x+'px';dot.style.top=y+'px';
+ dot.animate([{transform:'translate(0,0) scale(.7)'},{transform:`translate(${tx-x}px,${ty-y}px) scale(1.5)`}],{duration:330,easing:'ease-in'});
+ setTimeout(()=>{dot.remove();let boom=document.createElement('div');boom.className='boom';boom.style.left=(tx-4)+'px';boom.style.top=(ty-4)+'px';fx.appendChild(boom);setTimeout(()=>boom.remove(),500)},320);
+}
+function showBattle(t,a,b,txt){$('#battleTitle').textContent=t;$('#atkName').textContent='ATTACK';$('#defName').textContent='DEFEND';$('#casLine').textContent='';$('#dice').textContent=`⚄ ${a}  ×  ${b} ⚂`;$('#battleText').textContent=txt;$('#battle').classList.add('show');setTimeout(()=>$('#battle').classList.remove('show'),1000)}
+function endTurn(){
+ if(busy||state.turn!=='blue')return;
+ toast('AI COMMAND TAKING TURN');clearActivePaths();$('#unitCard').classList.remove('show');selected=null;state.turn='red';state.reserve=0;render();status.textContent='Enemy command is moving...';setTimeout(aiTurn,650);
+}
+async function aiTurn(){
+ let attacks=0;
+ for(let k=0;k<4;k++){
+  let opts=[];
+  state.lands.forEach((l,i)=>{if(l.owner==='red'&&l.army>1)neighbors(i).forEach(n=>{if(state.lands[n].owner==='blue')opts.push([i,n])})});
+  if(!opts.length)break;
+  opts.sort((x,y)=>(state.lands[y[0]].army-state.lands[y[1]].army)-(state.lands[x[0]].army-state.lands[x[1]].army)); let pool=opts.slice(0,Math.min(3,opts.length)); let [a,b]=pool[Math.floor(Math.random()*pool.length)];
+  doAttack(a,b,true);attacks++;await new Promise(r=>setTimeout(r,900));
+  if(checkWin())return;
+ }
+ let reds=state.lands.map((l,i)=>l.owner==='red'?i:-1).filter(i=>i>=0);
+ for(let n=0;n<Math.max(3,Math.floor(reds.length/3))+regionBonus('red');n++){let i=reds[Math.floor(Math.random()*reds.length)];state.lands[i].army++}
+ state.turn='blue';state.round++;toast(`ROUND ${state.round} · YOUR COMMAND`);state.reserve=Math.max(3,Math.floor(state.lands.filter(x=>x.owner==='blue').length/3))+regionBonus('blue');save();render();status.textContent=`Round ${state.round}: deploy ${state.reserve} reinforcements, then attack.`;
+}
+function checkWin(){
+ let b=state.lands.filter(x=>x.owner==='blue').length,r=state.lands.length-b;
+ if(!b||!r){busy=true;victoryParade(b?'blue':'red');setTimeout(()=>{alert(b?'🏆 You conquered the world!':'The enemy conquered the world.');fresh();busy=false},1500);return true}
+ return false;
+}
+function fit(){
+ let w=$('#boardWrap').clientWidth,h=$('#boardWrap').clientHeight;
+ scale=Math.min(w/940,h/580,1.15);
+ board.style.transform=`translate(-50%,-50%) scale(${scale})`;
+}
+$('#ucMarch').onclick=()=>{let i=+$('#unitCard').dataset.i;$('#unitCard').classList.remove('show');cartoonMarch(i,null)};
+document.querySelectorAll('#ucVehicles button').forEach(b=>b.onclick=()=>{let i=+$('#unitCard').dataset.i;$('#unitCard').classList.remove('show');b.dataset.v==='tank'?cartoonTankRun(i,null):b.dataset.v==='plane'?airStrike(i,null):navyRun(i,null)});
+$('#roll1').onclick=()=>multiAttack(attackFrom,attackTarget,1,false);
+$('#roll2').onclick=()=>multiAttack(attackFrom,attackTarget,2,false);
+$('#roll3').onclick=()=>multiAttack(attackFrom,attackTarget,3,false);
+$('#blitz').onclick=()=>multiAttack(attackFrom,attackTarget,3,true);
+$('#reinforce').onclick=reinforce;$('#attack').onclick=()=>{if(selected===null)return status.textContent='Select an army, then tap a neighboring red territory.';status.textContent='⚔ Select a neighboring red territory, then choose dice or BLITZ.'};
+$('#fortify').onclick=()=>{if(state.turn!=='blue'||busy)return;if(selected===null)return status.textContent='Select the blue territory armies will move FROM.';moveMode=!moveMode;status.textContent=moveMode?'↔ MOVE: tap a connected blue destination.':'Move mode cancelled.';render()};
+$('#end').onclick=()=>{moveMode=false;closeCombat();endTurn()};$('#newBtn').onclick=()=>{if(confirm('Start a new conquest?'))fresh()};
+window.addEventListener('resize',fit);drawRoutes();load();render();fit();
+})();
+</script>
+</body>
+</html>
